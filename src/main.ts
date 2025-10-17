@@ -1,24 +1,22 @@
-import './style.css'
-import typescriptLogo from './typescript.svg'
-import viteLogo from '/vite.svg'
-import { setupCounter } from './counter.ts'
+import './style.css';
+import { MiniShootout } from './game';
 
-document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
-  <div>
-    <a href="https://vite.dev" target="_blank">
-      <img src="${viteLogo}" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://www.typescriptlang.org/" target="_blank">
-      <img src="${typescriptLogo}" class="logo vanilla" alt="TypeScript logo" />
-    </a>
-    <h1>Vite + TypeScript</h1>
-    <div class="card">
-      <button id="counter" type="button"></button>
-    </div>
-    <p class="read-the-docs">
-      Click on the Vite and TypeScript logos to learn more
-    </p>
-  </div>
-`
+const canvas = document.getElementById('game-canvas') as HTMLCanvasElement | null;
+const scoreElement = document.getElementById('score') as HTMLDivElement | null;
 
-setupCounter(document.querySelector<HTMLButtonElement>('#counter')!)
+if (!canvas || !scoreElement) {
+  throw new Error('필수 DOM 요소를 찾을 수 없습니다.');
+}
+
+function updateScore(score: number) {
+  scoreElement.textContent = score.toString();
+  scoreElement.classList.add('score-changed');
+  setTimeout(() => {
+    scoreElement.classList.remove('score-changed');
+  }, 300);
+}
+
+new MiniShootout(canvas, updateScore);
+
+console.log('⚽ Mini Shootout Ready');
+console.log('손가락이나 마우스로 아래 공을 위로 튕겨 골대에 넣어보세요!');
