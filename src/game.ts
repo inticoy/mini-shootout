@@ -1,5 +1,7 @@
 import Matter from 'matter-js';
 
+const BALL_TEXTURE = new URL('./assets/soccer_ball_classic.svg', import.meta.url).href;
+
 type Point = { x: number; y: number };
 
 export class MiniShootout {
@@ -61,7 +63,7 @@ export class MiniShootout {
       frictionStatic: 0.01,
       render: {
         sprite: {
-          texture: '/assets/soccer_ball_classic.svg',
+          texture: BALL_TEXTURE,
           xScale: this.baseSpriteScale,
           yScale: this.baseSpriteScale
         }
