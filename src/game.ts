@@ -33,6 +33,9 @@ export class MiniShootout {
   private goalWidth = 0;
   private goalThickness = 18;
   private hadUpwardMotion = false;
+  private viewportWidth = window.innerWidth;
+  private viewportHeight = window.innerHeight;
+  private pixelRatio = window.devicePixelRatio || 1;
 
   private readonly handleResizeBound = this.handleResize.bind(this);
   private readonly handlePointerDownBound = this.handlePointerDown.bind(this);
@@ -42,22 +45,23 @@ export class MiniShootout {
     this.canvas = canvas;
     this.onScoreChange = onScoreChange;
 
-    this.configureCanvas();
+    this.updateViewportMetrics();
     this.engine = Matter.Engine.create({ gravity: { x: 0, y: 0 } });
     this.runner = Matter.Runner.create();
     this.render = Matter.Render.create({
       canvas: this.canvas,
       engine: this.engine,
       options: {
-        width: this.canvas.width,
-        height: this.canvas.height,
+        width: this.viewportWidth,
+        height: this.viewportHeight,
         background: 'transparent',
         wireframes: false,
-        pixelRatio: window.devicePixelRatio || 1
+        pixelRatio: this.pixelRatio
       }
     });
+    this.applyCanvasMetrics();
 
-    this.ballStart = { x: this.canvas.width / 2, y: this.canvas.height - this.baseBallRadius - 90 };
+    this.ballStart = { x: this.viewportWidth / 2, y: this.viewportHeight - this.baseBallRadius - 90 };
     this.ball = Matter.Bodies.circle(this.ballStart.x, this.ballStart.y, this.baseBallRadius, {
       label: 'ball',
       restitution: 0.45,
@@ -89,13 +93,36 @@ export class MiniShootout {
     Matter.Runner.run(this.runner, this.engine);
   }
 
-  private configureCanvas() {
-    this.canvas.width = window.innerWidth;
-    this.canvas.height = window.innerHeight;
+  private updateViewportMetrics() {
+    const viewport = window.visualViewport;
+    const fallbackWidth = document.documentElement.clientWidth || window.innerWidth;
+    const fallbackHeight = document.documentElement.clientHeight || window.innerHeight;
+
+    this.viewportWidth = viewport?.width ?? fallbackWidth;
+    this.viewportHeight = viewport?.height ?? fallbackHeight;
+    this.pixelRatio = window.devicePixelRatio || 1;
+  }
+
+  private applyCanvasMetrics() {
+    const cssWidth = this.viewportWidth;
+    const cssHeight = this.viewportHeight;
+    const dpr = this.pixelRatio;
+
+    this.canvas.style.width = `${cssWidth}px`;
+    this.canvas.style.height = `${cssHeight}px`;
+    this.canvas.width = Math.max(1, Math.round(cssWidth * dpr));
+    this.canvas.height = Math.max(1, Math.round(cssHeight * dpr));
+
+    if (this.render) {
+      Matter.Render.setPixelRatio(this.render, dpr);
+      this.render.options.width = cssWidth;
+      this.render.options.height = cssHeight;
+    }
   }
 
   private attachEventListeners() {
     window.addEventListener('resize', this.handleResizeBound);
+    window.visualViewport?.addEventListener('resize', this.handleResizeBound);
 
     this.canvas.addEventListener('pointerdown', this.handlePointerDownBound);
     this.canvas.addEventListener('pointerup', this.handlePointerUpBound);
@@ -104,14 +131,10 @@ export class MiniShootout {
   }
 
   private handleResize() {
-    this.configureCanvas();
+    this.updateViewportMetrics();
+    this.applyCanvasMetrics();
 
-    this.render.canvas.width = this.canvas.width;
-    this.render.canvas.height = this.canvas.height;
-    this.render.options.width = this.canvas.width;
-    this.render.options.height = this.canvas.height;
-
-    this.ballStart = { x: this.canvas.width / 2, y: this.canvas.height - this.baseBallRadius - 90 };
+    this.ballStart = { x: this.viewportWidth / 2, y: this.viewportHeight - this.baseBallRadius - 90 };
     this.rebuildStaticBodies();
 
     if (this.ball.isStatic) {
@@ -212,8 +235,8 @@ export class MiniShootout {
       const { x, y } = this.ball.position;
       const outOfBounds =
         x < -200 ||
-        x > this.canvas.width + 200 ||
-        y > this.canvas.height + 200 ||
+        x > this.viewportWidth + 200 ||
+        y > this.viewportHeight + 200 ||
         y < -200;
 
       const speed = Math.hypot(this.ball.velocity.x, this.ball.velocity.y);
@@ -228,7 +251,7 @@ export class MiniShootout {
   private handleGoal() {
     if (this.scored) return;
 
-    const goalCenterX = this.canvas.width / 2;
+    const goalCenterX = this.viewportWidth / 2;
     const innerLeft = goalCenterX - (this.goalWidth / 2 - this.goalThickness);
     const innerRight = goalCenterX + (this.goalWidth / 2 - this.goalThickness);
     const withinPosts =
@@ -279,7 +302,7 @@ export class MiniShootout {
   }
 
   private applyPerspectiveScale() {
-    const height = this.canvas.height;
+    const height = this.viewportHeight;
     if (height <= 0) return;
 
     const clampedY = Math.min(Math.max(this.ball.position.y, 0), height);
@@ -309,11 +332,11 @@ export class MiniShootout {
   }
 
   private createGoal() {
-    const goalY = this.canvas.height / 3;
-    const width = Math.max(180, Math.min(240, this.canvas.width * 0.55));
+    const goalY = this.viewportHeight / 3;
+    const width = Math.max(180, Math.min(240, this.viewportWidth * 0.55));
     const height = 108;
     const thickness = Math.max(18, Math.floor(width * 0.08));
-    const goalX = this.canvas.width / 2;
+    const goalX = this.viewportWidth / 2;
 
     this.goalWidth = width;
     this.goalThickness = thickness;
@@ -348,8 +371,8 @@ export class MiniShootout {
   private createBounds() {
     const offset = 100;
     const wallThickness = 100;
-    const width = this.canvas.width;
-    const height = this.canvas.height;
+    const width = this.viewportWidth;
+    const height = this.viewportHeight;
 
     const wallOptions: Matter.IBodyDefinition = {
       isStatic: true,
@@ -381,6 +404,7 @@ export class MiniShootout {
 
   public destroy() {
     window.removeEventListener('resize', this.handleResizeBound);
+    window.visualViewport?.removeEventListener('resize', this.handleResizeBound);
     this.canvas.removeEventListener('pointerdown', this.handlePointerDownBound);
     this.canvas.removeEventListener('pointerup', this.handlePointerUpBound);
     this.canvas.removeEventListener('pointercancel', this.handlePointerUpBound);
