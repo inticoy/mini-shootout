@@ -206,7 +206,12 @@ export class MiniShootout {
     }
 
     Matter.Body.setVelocity(this.ball, { x: vx, y: vy });
-    Matter.Body.setAngularVelocity(this.ball, 0);
+
+    const speed = Math.hypot(vx, vy);
+    const normalizedSpeed = Math.min(speed / maxSpeed, 1);
+    const spin =
+      ((vx / maxSpeed) * 0.9 + (Math.min(vy, 0) / maxSpeed) * 0.25) * normalizedSpeed;
+    Matter.Body.setAngularVelocity(this.ball, Math.max(Math.min(spin, 1), -1));
     if (vy < -4) {
       this.hadUpwardMotion = true;
     }
@@ -311,9 +316,9 @@ export class MiniShootout {
     const range = Math.max(bottomY - topY, 1);
     const normalized = Math.min(Math.max((clampedY - topY) / range, 0), 1);
 
-    const minScale = 0.78;
+    const minScale = 0.6;
     const maxScale = 1;
-    const eased = Math.pow(normalized, 0.65);
+    const eased = Math.pow(normalized, 0.8);
     const scale = minScale + (maxScale - minScale) * eased;
     const targetRadius = this.baseBallRadius * scale;
 
@@ -332,8 +337,8 @@ export class MiniShootout {
   }
 
   private createGoal() {
-    const goalY = this.viewportHeight / 3;
-    const width = Math.max(180, Math.min(240, this.viewportWidth * 0.55));
+    const goalY = Math.max(120, this.viewportHeight * 0.26);
+    const width = Math.max(180, Math.min(240, this.viewportWidth * 0.35));
     const height = 108;
     const thickness = Math.max(18, Math.floor(width * 0.08));
     const goalX = this.viewportWidth / 2;
@@ -414,4 +419,5 @@ export class MiniShootout {
     Matter.Runner.stop(this.runner);
     Matter.Engine.clear(this.engine);
   }
+
 }

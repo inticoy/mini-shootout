@@ -28,9 +28,9 @@ body {
 
 #ui {
   position: absolute;
-  top: 60px;
+  top: 50%;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translate(-50%, -50%);
   pointer-events: none;
   text-align: center;
 }
