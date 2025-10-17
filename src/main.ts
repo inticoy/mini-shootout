@@ -8,11 +8,13 @@ if (!canvas || !scoreElement) {
   throw new Error('필수 DOM 요소를 찾을 수 없습니다.');
 }
 
+const scoreDisplay = scoreElement;
+
 function updateScore(score: number) {
-  scoreElement.textContent = score.toString();
-  scoreElement.classList.add('score-changed');
+  scoreDisplay.textContent = score.toString();
+  scoreDisplay.classList.add('score-changed');
   setTimeout(() => {
-    scoreElement.classList.remove('score-changed');
+    scoreDisplay.classList.remove('score-changed');
   }, 300);
 }
 

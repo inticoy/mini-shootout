@@ -1,5 +1,8 @@
 import Matter from 'matter-js';
 
+type EngineEvent = Matter.IEventCollision<Matter.Engine>;
+type CollisionPair = Matter.Pair;
+
 const BALL_TEXTURE = new URL('./assets/soccer_ball_classic.svg', import.meta.url).href;
 
 type Point = { x: number; y: number };
@@ -187,8 +190,8 @@ export class MiniShootout {
   }
 
   private configureCollisions() {
-    Matter.Events.on(this.engine, 'collisionStart', (event) => {
-      event.pairs.forEach((pair) => {
+    Matter.Events.on(this.engine, 'collisionStart', (event: EngineEvent) => {
+      event.pairs.forEach((pair: CollisionPair) => {
         const { bodyA, bodyB } = pair;
         const labels = [bodyA.label, bodyB.label];
 
